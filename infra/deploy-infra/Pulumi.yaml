@@ -1,0 +1,15 @@
+name: weather-api-dev-deploy-infra
+runtime: nodejs
+description: Deploy Infra
+template:
+  config:
+    gcp:project:
+      description: The Google Cloud project to deploy into
+    gcp:region:
+      description: The Google Cloud region
+    appName:
+      description: Application name
+    dbName:
+      description: Database name
+    dbUsername:
+      description: Database username

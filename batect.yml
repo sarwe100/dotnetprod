@@ -1,0 +1,152 @@
+containers:
+  build-env:
+    image: mcr.microsoft.com/dotnet/core/sdk:3.1
+    volumes:
+      - local: .
+        container: /code
+        options: cached
+      - type: cache
+        name: nuget-cache
+        container: /root/.nuget/packages
+      - type: cache
+        name: weatherApi-obj
+        container: /code/src/WeatherApi/obj
+      - type: cache
+        name: weatherApi-tests-obj
+        container: /code/src/WeatherApi.Tests/obj
+    working_directory: /code
+  postgres:
+    build_directory: db/tests
+    ports:
+      - local: 5432
+        container: 5432
+    setup_commands:
+      - command: /scripts/run-migrations-integration-tests.sh
+    volumes:
+      - local: db/migrations
+        container: /migrations
+        options: cached
+      - local: db/scripts
+        container: /scripts
+        options: cached
+    environment:
+      POSTGRES_DB: weather_db
+      POSTGRES_USER: weather_user
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_SCHEMA_NAME: public
+      POSTGRES_MIGRATIONS_LOCATION: filesystem:/migrations
+  flyway-migrator:
+    build_directory: db
+    volumes:
+      - local: db/migrations
+        container: /migrations
+        options: cached
+      - local: db/scripts
+        container: /scripts
+        options: cached
+    environment:
+      DB_PORT: "5432"
+      DB_SCHEMA_NAME: public
+      DB_MIGRATIONS_LOCATION: filesystem:/migrations
+  pulumi:
+    image: pulumi/pulumi:v2.12.1
+    working_directory: /app
+    volumes:
+      - local: infra
+        container: /app
+        options: cached
+      - local: /var/run/docker.sock
+        container: /var/run/docker.sock
+    environment:
+      APP_NAME: $APP_NAME
+      GOOGLE_CREDENTIALS: $GOOGLE_CREDENTIALS
+      GOOGLE_SERVICE_ACCOUNT: $GOOGLE_SERVICE_ACCOUNT
+      GOOGLE_PROJECT: $GOOGLE_PROJECT
+      GOOGLE_REGION: $GOOGLE_REGION
+      PULUMI_ACCESS_TOKEN: $PULUMI_ACCESS_TOKEN
+      GITHUB_SHA: $GITHUB_SHA
+    entrypoint: bash
+  gcloud-sdk:
+    image: google/cloud-sdk:314.0.0-alpine
+    working_directory: /app
+    volumes:
+      - local: .
+        container: /app
+        options: cached
+      - local: /var/run/docker.sock
+        container: /var/run/docker.sock
+    environment:
+      APP_NAME: $APP_NAME
+      GOOGLE_CREDENTIALS: $GOOGLE_CREDENTIALS
+      GOOGLE_PROJECT: $GOOGLE_PROJECT
+      GITHUB_SHA: $GITHUB_SHA
+tasks:
+  build:
+    description: Build Weather API
+    run:
+      container: build-env
+      command: dotnet build
+  start-integration-test-db:
+    description: Start DB with migrations applied for locally running integration tests
+    run:
+      container: postgres
+  test:
+    description: Test Weather API
+    run:
+      container: build-env
+      command: dotnet test
+      environment:
+        ASPNETCORE_ENVIRONMENT: test
+        WEATHERDB__PASSWORD: $POSTGRES_PASSWORD
+    dependencies:
+      - postgres
+
+  deploy-iam:
+    description: Deploy IAM using Pulumi
+    run:
+      container: pulumi
+      command: deploy-iam.sh
+  deploy-infra:
+    description: Deploy infra using Pulumi
+    run:
+      container: pulumi
+      command: deploy-infra.sh
+      environment:
+        DB_NAME: $DB_NAME
+        DB_USERNAME: $DB_USERNAME
+  migrate-db:
+    description: Run database migrations
+    run:
+      container: flyway-migrator
+      entrypoint: /scripts/run-migrations-gcloud.sh
+      environment:
+        GOOGLE_PROJECT: $GOOGLE_PROJECT
+        GOOGLE_REGION: $GOOGLE_REGION
+        GOOGLE_CREDENTIALS: $GOOGLE_CREDENTIALS
+        DB_INSTANCE: $DB_INSTANCE
+        DB_HOST: localhost
+        DB_NAME: $DB_NAME
+        DB_USERNAME: $DB_USERNAME
+        DB_PASSWORD_SECRET_ID: $DB_PASSWORD_SECRET_ID
+        DB_PASSWORD_SECRET_VERSION: $DB_PASSWORD_SECRET_VERSION
+  build-scan-image:
+    description: Build and scan docker image for vulnerabilities
+    run:
+      container: gcloud-sdk
+      command: infra/build-scan-image.sh
+  push-image:
+    description: Push docker image to GCR
+    run:
+      container: gcloud-sdk
+      command: infra/push-image.sh
+  deploy:
+    description: Deploy Weather API to GCP Cloud Run using Pulumi
+    run:
+      container: pulumi
+      command: deploy-app.sh
+      environment:
+        GOOGLE_RUN_SERVICE_ACCOUNT: $GOOGLE_RUN_SERVICE_ACCOUNT
+        DB_INSTANCE: $DB_INSTANCE
+        ENVIRONMENT: $ENVIRONMENT

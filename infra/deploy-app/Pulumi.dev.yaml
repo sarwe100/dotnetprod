@@ -1,0 +1,2 @@
+config:
+  weather-api-dev-deploy-app:dockerConfigFile: ~/.docker/config.json
