@@ -22,7 +22,6 @@ namespace WeatherApi.Controllers
         public async Task<IActionResult> Get([FromQuery] GetWeatherForecastQuery query, CancellationToken ct = default)
         {
             var response = await _mediator.Send(query, ct);
-
             return Ok(response);
         }
 
