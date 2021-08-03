@@ -16,6 +16,7 @@ namespace WeatherApi.Controllers
         public WeatherForecastsController(IMediator mediator)
         {
             _mediator = mediator;
+
         }
 
         [HttpGet]
