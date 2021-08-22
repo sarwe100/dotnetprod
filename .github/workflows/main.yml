@@ -1,0 +1,79 @@
+name: Build, Test and Deploy
+env:
+  BATECT_ENABLE_TELEMETRY: true
+  GOOGLE_PROJECT: weather-api-dev
+  GOOGLE_REGION: australia-southeast1
+  APP_NAME: weather-api
+  DB_INSTANCE: weather-api-db
+  DB_NAME: weather_db
+  DB_USERNAME: weather-api-user
+  ENVIRONMENT: dev
+  IAM_GOOGLE_SERVICE_ACCOUNT: iam-svc@weather-api-dev.iam.gserviceaccount.com
+  CI_GOOGLE_SERVICE_ACCOUNT: ci-svc@weather-api-dev.iam.gserviceaccount.com
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build and test application
+        run: ./batect test
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy IAM
+        run: ./batect deploy-iam
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          GOOGLE_SERVICE_ACCOUNT: ${{ env.IAM_GOOGLE_SERVICE_ACCOUNT }}
+          GOOGLE_CREDENTIALS: ${{ secrets.IAM_GOOGLE_CREDENTIALS }}
+
+      - name: Deploy infra
+        run: ./batect deploy-infra
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          GOOGLE_SERVICE_ACCOUNT: ${{ env.CI_GOOGLE_SERVICE_ACCOUNT }}
+          GOOGLE_CREDENTIALS: ${{ secrets.CI_GOOGLE_CREDENTIALS }}
+
+      - name: Migrate database
+        run: ./batect migrate-db
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.CI_GOOGLE_CREDENTIALS }}
+          DB_PASSWORD_SECRET_ID: weather-api-db-password
+          DB_PASSWORD_SECRET_VERSION: 1
+
+      - name: Build and scan image
+        run: ./batect build-scan-image
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          GOOGLE_CREDENTIALS: ${{ secrets.CI_GOOGLE_CREDENTIALS }}
+
+      - name: Push image
+        run: ./batect push-image
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          GOOGLE_CREDENTIALS: ${{ secrets.CI_GOOGLE_CREDENTIALS }}
+
+      - name: Deploy
+        run: ./batect deploy
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          GOOGLE_SERVICE_ACCOUNT: ${{ env.CI_GOOGLE_SERVICE_ACCOUNT }}
+          GOOGLE_CREDENTIALS: ${{ secrets.CI_GOOGLE_CREDENTIALS }}
+          GOOGLE_RUN_SERVICE_ACCOUNT: weather-api-cloud-run@weather-api-dev.iam.gserviceaccount.com

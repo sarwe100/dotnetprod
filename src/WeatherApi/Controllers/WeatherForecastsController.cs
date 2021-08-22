@@ -11,8 +11,7 @@ namespace WeatherApi.Controllers
     [Route("/api/weather-forecasts")]
     public class WeatherForecastsController : ControllerBase
     {
-        private readonly IMediator _mediator;
-
+        private readonly IMediator _mediator;                                       
         public WeatherForecastsController(IMediator mediator)
         {
             _mediator = mediator;
@@ -21,8 +20,8 @@ namespace WeatherApi.Controllers
         [HttpGet]
         public async Task<IActionResult> Get([FromQuery] GetWeatherForecastQuery query, CancellationToken ct = default)
         {
-            var response = await _mediator.Send(query, ct);
-            return Ok(response);
+            var response = await _mediator.Send(query, ct);            
+             return Ok(response);
         }
 
         [HttpPost]
