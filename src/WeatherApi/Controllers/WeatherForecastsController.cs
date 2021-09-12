@@ -22,6 +22,7 @@ namespace WeatherApi.Controllers
         {
             var response = await _mediator.Send(query, ct);            
              return Ok(response);
+             
         }
 
         [HttpPost]
