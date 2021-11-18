@@ -4,3 +4,11 @@ steps:
     args: ['build', '-t', 
          'gcr.io/eshoponweb-37264/dotnetprod/myimage:$SHORT_SHA', '.']
   # [END cloudbuild_python_image_yaml]
+  # Run tests
+  - name: 'gcr.io/eshoponweb-37264/WeatherApi.Tests:current'
+    args: [
+      'test',
+      '-c', 'Release',
+      '--no-restore'
+    ]
+    # END tests
