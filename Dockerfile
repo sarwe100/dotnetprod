@@ -8,7 +8,7 @@ RUN dotnet restore
 
 # copy everything else and build app
 COPY src/WeatherApi/ ./
-RUN dotnet publish -c Release -o out
+RUN dotnet publish -c Release -o /app
 
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1 AS runtime
 WORKDIR /app
