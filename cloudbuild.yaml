@@ -6,7 +6,7 @@ steps:
   entrypoint: 'dotnet test'
   args:[
      '-c','dotnet test','eshoponweb-37264/WeatherApi.Tests'
-       ]
+       ,'.']
  #End
  
 # Docker Build
