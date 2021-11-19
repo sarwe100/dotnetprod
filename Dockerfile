@@ -2,18 +2,18 @@ FROM mcr.microsoft.com/dotnet/core/sdk:3.0-alpine AS build
 WORKDIR /app
 COPY *.sln .
 COPY src/WeatherApi/WeatherApi.csproj  ./src/WeatherApi/
-COPY src/WeatherApiTests/WeatherApiTests.csproj ./src/WeatherApiTests/
+COPY src/WeatherApi.Tests/WeatherApi.Tests.csproj ./src/WeatherApi.Tests/
 
 RUN dotnet restore
 # copy full solution over
 COPY . .
 RUN dotnet build
 FROM build AS testrunner
-WORKDIR /app/test/WeatherApiTests
+WORKDIR /app/test/WeatherApi.Tests
 CMD ["dotnet", "test", "--logger:trx"]
 # run the unit tests
 FROM build AS test
-WORKDIR /app/test/WeatherApiTests
+WORKDIR /app/test/WeatherApi.Tests
 RUN dotnet test --logger:trx
 
 # publish the API
