@@ -13,7 +13,7 @@ WORKDIR /app/test/WeatherApi.Tests
 CMD ["dotnet", "test", "--logger:trx"]
 # run the unit tests
 FROM build AS test
-WORKDIR /app/test/WeatherApi.Tests
+WORKDIR /app/src/WeatherApi.Tests
 RUN dotnet test --logger:trx
 
 # publish the API
