@@ -1,26 +1,30 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.0-alpine AS build
 WORKDIR /app
+COPY *.sln .
+COPY src/WeatherApi/WeatherApi.csproj  ./src/WeatherApi/
+COPY src/WeatherApiTests/WeatherApiTests.csproj ./src/WeatherApiTests/
 
-# copy csproj and restore as distinct layers
-COPY .editorconfig .
-COPY src/WeatherApi/WeatherApi.csproj ./
-COPY src/WeatherApi.Tests/WeatherApi.Tests.csproj ./
-RUN dotnet restore "WeatherApi.csproj"
-
-# copy everything else and build app
-COPY src/WeatherApi/ WeatherApi.csproj
-RUN dotnet publish -c Release -o /app
-
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1 AS runtime
-WORKDIR /app
-
-COPY --from=build /app .
-
-ENTRYPOINT ["dotnet", "WeatherApi.dll"]
-
+RUN dotnet restore
+# copy full solution over
+COPY . .
+RUN dotnet build
+FROM build AS testrunner
+WORKDIR /app/test/WeatherApiTests
+CMD ["dotnet", "test", "--logger:trx"]
 # run the unit tests
 FROM build AS test
-# set the directory to be within the unit test project
-WORKDIR src/WeatherApi.Tests/WeatherApi.Tests.csproj
-# run the unit tests
+WORKDIR /app/test/WeatherApiTests
 RUN dotnet test --logger:trx
+
+# publish the API
+FROM build AS publish
+WORKDIR /app/src/WeatherApi
+RUN dotnet publish -c Release -o out
+# run the api
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.0-alpine AS runtime
+WORKDIR /app
+COPY --from=publish /app/src/WeatherApi/out ./
+EXPOSE 80
+ENTRYPOINT ["dotnet", "WeatherApi.dll"]
+
+
