@@ -8,7 +8,7 @@ COPY src/WeatherApi.Tests/WeatherApi.Tests.csproj ./
 RUN dotnet restore "WeatherApi.csproj"
 
 # copy everything else and build app
-COPY src/WeatherApi/ WeatherApi.csproj/
+COPY src/WeatherApi/ WeatherApi.csproj
 RUN dotnet publish -c Release -o /app
 
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1 AS runtime
