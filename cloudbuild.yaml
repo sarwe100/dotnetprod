@@ -1,16 +1,14 @@
 steps:
  
-# Run Tests
-  
+# Run Tests 
 
 - name: "gcr.io/cloud-builders/dotnet"
-  entrypoint: 'bash'
+  entrypoint: 'dotnet test'
   args:[
-    - '-c'
-    - |
-          dotnet test --no-build -c 'eshoponweb-37264/WeatherApi.Tests'
-          ]
- #End Tests
+     '-c','dotnet test', '--no-build', '-c', 'eshoponweb-37264/WeatherApi.Tests'
+        ]
+ #End
+ 
 # Docker Build
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 
