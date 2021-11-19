@@ -4,7 +4,7 @@ WORKDIR /app
 # copy csproj and restore as distinct layers
 COPY .editorconfig .
 COPY src/WeatherApi/WeatherApi.csproj ./
-src/WeatherApi.Tests/WeatherApi.Tests.csproj
+COPY src/WeatherApi.Tests/WeatherApi.Tests.csproj ./
 RUN dotnet restore "WeatherApi.csproj"
 
 # copy everything else and build app
