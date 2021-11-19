@@ -20,6 +20,6 @@ ENTRYPOINT ["dotnet", "WeatherApi.dll"]
 # run the unit tests
 FROM build AS test
 # set the directory to be within the unit test project
-WORKDIR src/WeatherApi.Tests
+WORKDIR src/WeatherApi.Tests/WeatherApi.Tests.csproj
 # run the unit tests
 RUN dotnet test --logger:trx
