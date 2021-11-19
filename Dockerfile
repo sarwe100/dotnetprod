@@ -16,3 +16,9 @@ WORKDIR /app
 COPY --from=build /app .
 
 ENTRYPOINT ["dotnet", "WeatherApi.dll"]
+# run the unit tests
+FROM build AS test
+# set the directory to be within the unit test project
+WORKDIR src/WeatherApi/WeatherApi.Tests
+# run the unit tests
+RUN dotnet test --logger:trx
