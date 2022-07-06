@@ -23,6 +23,7 @@ namespace WeatherApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            
 
             services.ConfigureDataAccess(Configuration);
 
@@ -42,7 +43,7 @@ namespace WeatherApi
         public static void Configure(IApplicationBuilder app)
         {
             app.UseProblemDetails();
-
+           // app.UseResponseCaching();
             app.UseRouting();
             app.UseAuthorization();
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });

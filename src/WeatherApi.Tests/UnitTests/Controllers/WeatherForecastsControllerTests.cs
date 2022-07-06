@@ -18,7 +18,7 @@ namespace WeatherApi.Tests.UnitTests.Controllers
         {
             var getWeatherForecastQuery = new GetWeatherForecastQuery
             {
-                City = "Australia/Melbourne",
+                City = "Australia/Sydeny",
                 ForecastDate = new DateTimeOffset(2020, 1, 2, 3, 5, 1, TimeSpan.Zero)
             };
             var sut = new WeatherForecastsController(Mock.Of<IMediator>());
