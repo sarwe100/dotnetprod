@@ -43,7 +43,7 @@ namespace WeatherApi
         public static void Configure(IApplicationBuilder app)
         {
             app.UseProblemDetails();
-           // app.UseResponseCaching();
+           app.UseResponseCaching();
             app.UseRouting();
             app.UseAuthorization();
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
